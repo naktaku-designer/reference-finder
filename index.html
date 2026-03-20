@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>기획서 레퍼런스 파인더</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── 공통 ── */
+    .hidden { display: none !important; }
+
+    /* ── 홈 헤더 ── */
+    .home-header {
+      padding: 40px 40px 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .home-header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+    .home-header p  { font-size: 13px; color: #718096; margin-top: 4px; }
+
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #2d6aac;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #2b5fa0; }
+
+    /* ── 드래그 영역 ── */
+    .drop-zone {
+      display: block;
+      margin: 32px 40px;
+      border: 2px dashed rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone.drag-over {
+      border-color: #2d6aac;
+      background: rgba(45,106,172,0.08);
+    }
+    .drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
+    .drop-zone h3 { font-size: 16px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; }
+    .drop-zone p  { font-size: 13px; color: #4a5568; }
+    .drop-zone .hint {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 11px;
+      color: #2d6aac;
+      border: 1px solid rgba(45,106,172,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+    #file-input { display: none; }
+
+    /* ── 경로 입력 ── */
+    .path-input-row {
+      display: flex;
+      gap: 8px;
+      margin: 0 40px 32px;
+    }
+    .path-input-row input {
+      flex: 1;
+      background: #1a1f2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e2e8f0;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .path-input-row input::placeholder { color: #4a5568; }
+    .path-input-row input:focus { border-color: rgba(45,106,172,0.6); }
+    .path-input-row button {
+      background: #2d6aac;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .path-input-row button:hover { background: #2b5fa0; }
+
+    /* ── 프로젝트 그리드 ── */
+    .projects-section {
+      padding: 0 40px 48px;
+    }
+    .projects-section h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .project-card {
+      background: #1a1f2e;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      position: relative;
+    }
+    .project-card:hover { background: #1e2538; border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+    .project-card .pc-name { font-size: 15px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+    .project-card .pc-type { font-size: 12px; color: #718096; margin-bottom: 12px; }
+    .project-card .pc-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: #4a5568;
+    }
+    .project-card .pc-meta span { display: flex; align-items: center; gap: 4px; }
+    .project-card .pc-date {
+      position: absolute;
+      top: 18px; right: 16px;
+      font-size: 10px;
+      color: #2d3748;
+    }
+    .project-card .btn-del {
+      position: absolute;
+      bottom: 14px; right: 14px;
+      background: none;
+      border: none;
+      color: #2d3748;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .project-card:hover .btn-del { color: #718096; }
+    .project-card .btn-del:hover { color: #fc8181 !important; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+      color: #2d3748;
+      font-size: 14px;
+    }
+
+    /* ── 로딩 오버레이 ── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,17,23,0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #2d6aac;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 18px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-overlay p { font-size: 14px; color: #718096; }
+
+    /* ── 에러 토스트 ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #c53030;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 22px;
+      font-size: 13px;
+      transition: transform 0.3s;
+      z-index: 200;
+      max-width: 400px;
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── 디테일 뷰 헤더 ── */
+    .detail-header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 28px 40px 22px;
+    }
+    .detail-header .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #718096;
+      cursor: pointer;
+      margin-bottom: 14px;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .detail-header .back-btn:hover { color: #e2e8f0; }
+    .detail-header h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .detail-header .meta { font-size: 13px; color: #718096; }
+    .badge-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+    .badge.dribbble  { background: rgba(234,76,137,0.2); color: #ea4c89; }
+    .badge.behance   { background: rgba(23,105,255,0.2); color: #5b9bff; }
+    .badge.pinterest { background: rgba(230,0,35,0.2);  color: #ff5c6a; }
+
+    /* ── 디테일 본문 ── */
+    #detail-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+    }
+    .section { margin-bottom: 40px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .section-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .section-header h2 { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+    .section-desc { font-size: 12px; color: #4a5568; margin-left: 4px; flex: 1; }
+    .section-count { font-size: 11px; color: #4a5568; margin-left: auto; white-space: nowrap; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 10px;
+    }
+    .card {
+      background: #1a1f2e;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .card:hover { background: #1e2538; border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+    .src-badge {
+      font-size: 10px; font-weight: 700;
+      padding: 3px 7px; border-radius: 5px;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .src-badge.dribbble  { background: rgba(234,76,137,0.2); color: #ea4c89; }
+    .src-badge.behance   { background: rgba(23,105,255,0.2); color: #5b9bff; }
+    .src-badge.pinterest { background: rgba(230,0,35,0.2);  color: #ff5c6a; }
+    .card-body { flex: 1; min-width: 0; }
+    .card-title { font-size: 13px; color: #e2e8f0; line-height: 1.45; margin-bottom: 3px; }
+    .card-note  { font-size: 11px; color: #4a5568; }
+    .arrow { color: #2d3748; font-size: 14px; flex-shrink: 0; margin-top: 1px; transition: color 0.15s; }
+    .card:hover .arrow { color: #718096; }
+
+    @media (max-width: 600px) {
+      .home-header, .drop-zone, .projects-section { padding-left: 20px; padding-right: 20px; }
+      .drop-zone { margin-left: 20px; margin-right: 20px; }
+      .detail-header { padding: 20px; }
+      #detail-main { padding: 20px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 로딩 -->
+<div id="loading-overlay" class="hidden">
+  <div class="spinner"></div>
+  <p id="loading-msg">기획서 분석 중...</p>
+</div>
+
+<!-- 에러 토스트 -->
+<div id="toast"></div>
+
+<!-- 홈 뷰 -->
+<div id="home-view">
+  <div class="home-header">
+    <div>
+      <h1>📋 기획서 레퍼런스 파인더</h1>
+      <p>기획서를 업로드하면 화면별 디자인 레퍼런스를 자동으로 찾아드립니다</p>
+    </div>
+    <label class="btn-add" for="file-input">+ 기획서 추가</label>
+  </div>
+
+  <label class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" accept=".pdf" style="display:none" />
+    <div class="icon">📄</div>
+    <h3>기획서 PDF를 여기에 드래그하거나 클릭해서 업로드하세요</h3>
+    <p>Dribbble · Behance · Pinterest에서 화면별 레퍼런스를 자동으로 찾아드립니다</p>
+    <span class="hint">PDF 파일만 지원</span>
+  </label>
+
+  <div class="path-input-row">
+    <input type="text" id="path-input" placeholder="또는 PDF 파일 경로를 직접 입력하세요  예) /Users/이름/Downloads/기획서.pdf" />
+    <button id="path-btn">분석</button>
+  </div>
+
+  <div class="projects-section">
+    <h2>분석한 기획서</h2>
+    <div class="projects-grid" id="projects-grid">
+      <div class="empty-state">아직 분석한 기획서가 없습니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- 디테일 뷰 -->
+<div id="detail-view" class="hidden">
+  <div class="detail-header">
+    <button class="back-btn" id="back-btn">← 목록으로</button>
+    <h1 id="detail-title"></h1>
+    <div class="meta" id="detail-meta"></div>
+    <div class="badge-row">
+      <span class="badge dribbble">Dribbble</span>
+      <span class="badge behance">Behance</span>
+      <span class="badge pinterest">Pinterest</span>
+    </div>
+  </div>
+  <div id="detail-main"></div>
+</div>
+
+<script>
+// ── 상태 ──
+let currentProject = null;
+
+// ── DOM ──
+const homeView    = document.getElementById('home-view');
+const detailView  = document.getElementById('detail-view');
+const projectsGrid = document.getElementById('projects-grid');
+const dropZone    = document.getElementById('drop-zone');
+const fileInput   = document.getElementById('file-input');
+const loadingOverlay = document.getElementById('loading-overlay');
+const loadingMsg  = document.getElementById('loading-msg');
+const toast       = document.getElementById('toast');
+
+// ── 유틸 ──
+function showLoading(msg = '기획서 분석 중...') {
+  loadingMsg.textContent = msg;
+  loadingOverlay.classList.remove('hidden');
+}
+function hideLoading() {
+  loadingOverlay.classList.add('hidden');
+}
+function showToast(msg, duration = 4000) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+function srcClass(s) { return s.toLowerCase(); }
+
+// ── 홈 렌더 ──
+function renderHome(projects) {
+  if (!projects.length) {
+    projectsGrid.innerHTML = '<div class="empty-state">아직 분석한 기획서가 없습니다<br>위 영역에 PDF를 드래그하거나 클릭해서 추가하세요</div>';
+    return;
+  }
+  projectsGrid.innerHTML = projects.map(p => `
+    <div class="project-card" data-id="${p.id}">
+      <div class="pc-date">${p.created_at}</div>
+      <div class="pc-name">${p.project_name}</div>
+      <div class="pc-type">${p.project_type}${p.theme ? ' · ' + p.theme : ''}</div>
+      <div class="pc-meta">
+        <span>🖥 ${p.screen_count}개 화면</span>
+        <span>🔗 ${p.link_count}개 링크</span>
+        <span>📄 ${p.filename}</span>
+      </div>
+      <button class="btn-del" data-id="${p.id}" title="삭제">✕</button>
+    </div>
+  `).join('');
+
+  projectsGrid.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.btn-del')) return;
+      loadDetail(card.dataset.id);
+    });
+  });
+
+  projectsGrid.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm('삭제하시겠습니까?')) return;
+      await fetch(`/projects/${btn.dataset.id}`, { method: 'DELETE' });
+      loadProjects();
+    });
+  });
+}
+
+// ── 디테일 렌더 ──
+function renderDetail(project) {
+  document.getElementById('detail-title').textContent = project.project_name + ' — 디자인 레퍼런스';
+  document.getElementById('detail-meta').textContent =
+    `${project.project_type} · ${project.theme} · ${project.created_at} · 총 ${project.screens.reduce((a,s) => a + s.links.length, 0)}개 링크`;
+
+  const main = document.getElementById('detail-main');
+  main.innerHTML = project.screens.map(screen => `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-dot" style="background:${screen.color}"></div>
+        <h2>${screen.name}</h2>
+        <span class="section-desc">${screen.description || ''}</span>
+        <span class="section-count">${screen.links.length}개</span>
+      </div>
+      <div class="cards">
+        ${screen.links.map(link => `
+          <a class="card" href="${link.url}" target="_blank" rel="noopener">
+            <span class="src-badge ${srcClass(link.src)}">${link.src}</span>
+            <div class="card-body">
+              <div class="card-title">${link.title}</div>
+              <div class="card-note">${link.note}</div>
+            </div>
+            <span class="arrow">↗</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── API 호출 ──
+async function loadProjects() {
+  try {
+    const res = await fetch('/projects');
+    const data = await res.json();
+    renderHome(data);
+  } catch {
+    showToast('프로젝트 목록을 불러오지 못했습니다.');
+  }
+}
+
+async function loadDetail(id) {
+  showLoading('레퍼런스 불러오는 중...');
+  try {
+    const res = await fetch(`/projects/${id}`);
+    const data = await res.json();
+    currentProject = data;
+    renderDetail(data);
+    homeView.classList.add('hidden');
+    detailView.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  } catch {
+    showToast('프로젝트를 불러오지 못했습니다.');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function analyzeFilePath(filepath) {
+  showLoading('기획서 분석 중... (약 10~20초 소요)');
+  try {
+    const res = await fetch('/analyze-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || '분석 실패'); return; }
+    currentProject = data;
+    renderDetail(data);
+    homeView.classList.add('hidden');
+    detailView.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  } catch (e) {
+    showToast('서버 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function analyzeFile(file) {
+  showLoading('기획서 분석 중... (약 10~20초 소요)');
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/analyze', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || '분석 실패'); return; }
+    currentProject = data;
+    renderDetail(data);
+    homeView.classList.add('hidden');
+    detailView.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  } catch (e) {
+    showToast('서버 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ── 이벤트 ──
+document.getElementById('back-btn').addEventListener('click', () => {
+  detailView.classList.add('hidden');
+  homeView.classList.remove('hidden');
+  loadProjects();
+  window.scrollTo(0, 0);
+});
+
+// file-input이 drop-zone 안에 직접 위치하므로 별도 click() 불필요
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) analyzeFile(file);
+  fileInput.value = '';
+});
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.pdf')) analyzeFile(file);
+  else showToast('PDF 파일만 지원합니다.');
+});
+
+// ── 경로 입력 분석 ──
+document.getElementById('path-btn').addEventListener('click', () => {
+  const fp = document.getElementById('path-input').value.trim();
+  if (!fp) { showToast('파일 경로를 입력해주세요.'); return; }
+  analyzeFilePath(fp);
+});
+document.getElementById('path-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('path-btn').click();
+});
+
+// ── 초기 로드 ──
+loadProjects();
+</script>
+</body>
+</html>

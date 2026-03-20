@@ -1,0 +1,21 @@
+# 의존성
+node_modules/
+
+# 환경변수 (API 키 포함 — 절대 공유 금지)
+.env
+
+# 분석 결과 데이터 (개인 기획서 내용 포함)
+data/
+
+# 기획서 PDF (민감 문서)
+*.pdf
+
+# macOS
+.DS_Store
+
+# Claude Code 로컬 설정
+.claude/settings.local.json
+
+# 에디터
+.vscode/
+*.swp
